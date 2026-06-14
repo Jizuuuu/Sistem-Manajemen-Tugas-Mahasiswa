@@ -25,7 +25,7 @@ ArrayList<Tugas> tasks = manager.getByDosen(dosen.getIdDosen());
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard Dosen - TaskMan</title>
-    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/style.css?v=<%= System.currentTimeMillis() %>">
 </head>
 <body>
 
@@ -101,8 +101,30 @@ ArrayList<Tugas> tasks = manager.getByDosen(dosen.getIdDosen());
                                         <span style="font-size: 0.8rem; color: var(--text-muted);"><%= t.getNamaMk() %></span>
                                     </td>
                                     <td style="font-weight: 500;"><%= t.getJudul() %></td>
-                                    <td style="font-size: 0.9rem; color: var(--text-muted); max-width: 250px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;">
-                                        <%= t.getDeskripsi() %>
+                                    <td style="font-size: 0.9rem; color: var(--text-muted); max-width: 250px;">
+                                        <% 
+                                            String desc = t.getDeskripsi();
+                                            if (desc == null) desc = "";
+                                            String truncated = desc;
+                                            boolean isLong = false;
+                                            if (desc.length() > 60) {
+                                                truncated = desc.substring(0, 60) + "...";
+                                                isLong = true;
+                                            }
+                                            String escapedJudul = t.getJudul().replace("\"", "&quot;");
+                                        %>
+                                        <span class="desc-text"><%= truncated %></span>
+                                        <% if (isLong) { %>
+                                            <div class="hidden-desc" style="display: none;"><%= desc %></div>
+                                            <br>
+                                            <button type="button" class="btn-link btn-lihat-semua" 
+                                                    data-judul="<%= escapedJudul %>"
+                                                    data-mk="<%= t.getKodeMk() %> - <%= t.getNamaMk() %>"
+                                                    data-deadline="<%= t.getDeadline() %>"
+                                                    data-tipe="Dosen">
+                                                Lihat Semua
+                                            </button>
+                                        <% } %>
                                     </td>
                                     <td style="font-size: 0.85rem; color: var(--text-muted);"><%= t.getTanggalDibuat() %></td>
                                     <td style="font-weight: 600; font-size: 0.9rem; color: var(--warning);"><%= t.getDeadline() %></td>
@@ -123,6 +145,46 @@ ArrayList<Tugas> tasks = manager.getByDosen(dosen.getIdDosen());
     </div>
 </div>
 
-<script src="js/script.js"></script>
+<!-- Modal Detail Tugas -->
+<div id="taskModal" class="modal-overlay">
+    <div class="modal-container">
+        <div class="modal-header">
+            <div class="modal-header-left">
+                <span class="modal-header-icon">📋</span>
+                <h3 class="modal-title">Detail Tugas</h3>
+            </div>
+            <button class="modal-close" type="button">&times;</button>
+        </div>
+        <div class="modal-body">
+            <h2 id="modalTitle" class="modal-task-title"></h2>
+            
+            <div class="modal-meta-grid">
+                <div class="modal-meta-card meta-course">
+                    <span class="modal-meta-label">Mata Kuliah</span>
+                    <span id="modalMk" class="modal-meta-value"></span>
+                </div>
+                
+                <div class="modal-meta-card meta-type">
+                    <span class="modal-meta-label">Tipe Tugas</span>
+                    <span id="modalTipe" class="modal-meta-value"></span>
+                </div>
+                
+                <div class="modal-meta-card meta-deadline" style="grid-column: span 2;">
+                    <span class="modal-meta-label">Batas Waktu (Deadline)</span>
+                    <span id="modalDeadline" class="modal-meta-value"></span>
+                </div>
+            </div>
+            
+            <div class="modal-desc-container">
+                <div class="modal-desc-header">
+                    <span>📝</span> Deskripsi Tugas
+                </div>
+                <div id="modalDesc" class="modal-description"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="js/script.js?v=<%= System.currentTimeMillis() %>"></script>
 </body>
 </html>

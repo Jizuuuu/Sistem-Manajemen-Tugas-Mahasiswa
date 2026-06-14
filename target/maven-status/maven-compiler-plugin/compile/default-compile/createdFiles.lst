@@ -1,6 +1,7 @@
 servlet\LogoutServlet.class
 model\Tugas.class
 model\MataKuliah.class
+servlet\TugasPersonalServlet.class
 service\TugasManager.class
 model\Mahasiswa.class
 servlet\HapusTugasServlet.class

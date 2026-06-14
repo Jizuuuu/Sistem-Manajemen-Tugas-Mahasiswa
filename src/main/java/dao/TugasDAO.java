@@ -140,7 +140,8 @@ public class TugasDAO {
             conn = Koneksi.getConnection();
             String sql = "SELECT t.*, mk.nama_mk, mk.kode_mk FROM tugas t "
                        + "JOIN mata_kuliah mk ON t.id_mk = mk.id_mk "
-                       + "WHERE t.id_dosen = ? "
+                       + "JOIN dosen_mk dmk ON t.id_mk = dmk.id_mk "
+                       + "WHERE dmk.id_dosen = ? "
                        + "ORDER BY t.tanggal_dibuat DESC";
             ps = conn.prepareStatement(sql);
             ps.setInt(1, idDosen);
@@ -210,34 +211,19 @@ public class TugasDAO {
     public void insertPersonal(Tugas tugas, int idMahasiswa) {
         Connection conn = null;
         PreparedStatement ps = null;
-        ResultSet rs = null;
         try {
             conn = Koneksi.getConnection();
-            // Default id_dosen = 1 (Pak Budi) is a safe foreign key since Dosen table has id_dosen = 1
-            String sql = "INSERT INTO tugas (judul, deskripsi, deadline, id_mk, id_dosen) VALUES (?, ?, ?, ?, 1)";
-            ps = conn.prepareStatement(sql, Statement.RETURN_GENERATED_KEYS);
-            ps.setString(1, tugas.getJudul());
-            ps.setString(2, tugas.getDeskripsi());
-            ps.setString(3, tugas.getDeadline());
-            ps.setInt(4, tugas.getIdMk());
+            String sql = "INSERT INTO tugas_pribadi (id_mahasiswa, id_mk, judul, deskripsi, deadline, status) VALUES (?, ?, ?, ?, ?, 'BELUM')";
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1, idMahasiswa);
+            ps.setInt(2, tugas.getIdMk());
+            ps.setString(3, tugas.getJudul());
+            ps.setString(4, tugas.getDeskripsi());
+            ps.setString(5, tugas.getDeadline());
             ps.executeUpdate();
-
-            rs = ps.getGeneratedKeys();
-            if (rs.next()) {
-                int idTugas = rs.getInt(1);
-                
-                // Assign ONLY for this specific student in tugas_mahasiswa
-                String assignSql = "INSERT INTO tugas_mahasiswa (id_tugas, id_mahasiswa, status) VALUES (?, ?, 'BELUM')";
-                PreparedStatement assignPs = conn.prepareStatement(assignSql);
-                assignPs.setInt(1, idTugas);
-                assignPs.setInt(2, idMahasiswa);
-                assignPs.executeUpdate();
-                assignPs.close();
-            }
         } catch (Exception e) {
             e.printStackTrace();
         } finally {
-            try { if (rs != null) rs.close(); } catch (SQLException e) {}
             try { if (ps != null) ps.close(); } catch (SQLException e) {}
             try { if (conn != null) conn.close(); } catch (SQLException e) {}
         }

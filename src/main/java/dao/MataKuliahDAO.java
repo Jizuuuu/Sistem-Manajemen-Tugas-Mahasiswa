@@ -61,4 +61,36 @@ public class MataKuliahDAO {
         }
         return list;
     }
+
+    public ArrayList<MataKuliah> getByDosen(int idDosen) {
+        ArrayList<MataKuliah> list = new ArrayList<>();
+        Connection conn = null;
+        PreparedStatement ps = null;
+        ResultSet rs = null;
+        try {
+            conn = Koneksi.getConnection();
+            String sql = "SELECT mk.* FROM mata_kuliah mk "
+                       + "JOIN dosen_mk dmk ON mk.id_mk = dmk.id_mk "
+                       + "WHERE dmk.id_dosen = ? "
+                       + "ORDER BY mk.nama_mk";
+            ps = conn.prepareStatement(sql);
+            ps.setInt(1, idDosen);
+            rs = ps.executeQuery();
+            while (rs.next()) {
+                list.add(new MataKuliah(
+                        rs.getInt("id_mk"),
+                        rs.getString("kode_mk"),
+                        rs.getString("nama_mk"),
+                        rs.getInt("semester")
+                ));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        } finally {
+            try { if (rs != null) rs.close(); } catch (SQLException e) {}
+            try { if (ps != null) ps.close(); } catch (SQLException e) {}
+            try { if (conn != null) conn.close(); } catch (SQLException e) {}
+        }
+        return list;
+    }
 }

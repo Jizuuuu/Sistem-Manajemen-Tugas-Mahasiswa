@@ -13,16 +13,30 @@ public class TugasMahasiswaDAO {
         try {
             conn = Koneksi.getConnection();
             String sql;
-            if ("SELESAI".equalsIgnoreCase(status)) {
-                sql = "UPDATE tugas_mahasiswa SET status = 'SELESAI', tanggal_selesai = CURDATE() "
-                    + "WHERE id_tugas = ? AND id_mahasiswa = ?";
+            if (idTugas < 0) {
+                // Personal task: update tugas_pribadi
+                int idPersonal = -idTugas;
+                if ("SELESAI".equalsIgnoreCase(status)) {
+                    sql = "UPDATE tugas_pribadi SET status = 'SELESAI' WHERE id_tugas_pribadi = ? AND id_mahasiswa = ?";
+                } else {
+                    sql = "UPDATE tugas_pribadi SET status = 'BELUM' WHERE id_tugas_pribadi = ? AND id_mahasiswa = ?";
+                }
+                ps = conn.prepareStatement(sql);
+                ps.setInt(1, idPersonal);
+                ps.setInt(2, idMahasiswa);
             } else {
-                sql = "UPDATE tugas_mahasiswa SET status = 'BELUM', tanggal_selesai = NULL "
-                    + "WHERE id_tugas = ? AND id_mahasiswa = ?";
+                // Course task: update tugas_mahasiswa
+                if ("SELESAI".equalsIgnoreCase(status)) {
+                    sql = "UPDATE tugas_mahasiswa SET status = 'SELESAI', tanggal_selesai = CURDATE() "
+                        + "WHERE id_tugas = ? AND id_mahasiswa = ?";
+                } else {
+                    sql = "UPDATE tugas_mahasiswa SET status = 'BELUM', tanggal_selesai = NULL "
+                        + "WHERE id_tugas = ? AND id_mahasiswa = ?";
+                }
+                ps = conn.prepareStatement(sql);
+                ps.setInt(1, idTugas);
+                ps.setInt(2, idMahasiswa);
             }
-            ps = conn.prepareStatement(sql);
-            ps.setInt(1, idTugas);
-            ps.setInt(2, idMahasiswa);
             ps.executeUpdate();
         } catch (Exception e) {
             e.printStackTrace();
@@ -39,13 +53,18 @@ public class TugasMahasiswaDAO {
         ResultSet rs = null;
         try {
             conn = Koneksi.getConnection();
-            String sql = "SELECT tm.status, tm.tanggal_selesai, t.*, mk.nama_mk, mk.kode_mk FROM tugas_mahasiswa tm "
+            String sql = "SELECT tm.status, tm.tanggal_selesai, t.id_tugas, t.judul, t.deskripsi, t.deadline, t.tanggal_dibuat, t.id_mk, t.id_dosen, mk.nama_mk, mk.kode_mk FROM tugas_mahasiswa tm "
                        + "JOIN tugas t ON tm.id_tugas = t.id_tugas "
                        + "JOIN mata_kuliah mk ON t.id_mk = mk.id_mk "
                        + "WHERE tm.id_mahasiswa = ? "
-                       + "ORDER BY t.deadline ASC";
+                       + "UNION ALL "
+                       + "SELECT tp.status, NULL AS tanggal_selesai, -tp.id_tugas_pribadi AS id_tugas, tp.judul, tp.deskripsi, tp.deadline, tp.tanggal_dibuat, tp.id_mk, 0 AS id_dosen, mk.nama_mk, mk.kode_mk FROM tugas_pribadi tp "
+                       + "JOIN mata_kuliah mk ON tp.id_mk = mk.id_mk "
+                       + "WHERE tp.id_mahasiswa = ? "
+                       + "ORDER BY deadline ASC";
             ps = conn.prepareStatement(sql);
             ps.setInt(1, idMahasiswa);
+            ps.setInt(2, idMahasiswa);
             rs = ps.executeQuery();
             while (rs.next()) {
                 Tugas tugas = new Tugas(
@@ -80,16 +99,24 @@ public class TugasMahasiswaDAO {
         ResultSet rs = null;
         try {
             conn = Koneksi.getConnection();
-            String sql = "SELECT tm.status, tm.tanggal_selesai, t.*, mk.nama_mk, mk.kode_mk FROM tugas_mahasiswa tm "
+            String sql = "SELECT tm.status, tm.tanggal_selesai, t.id_tugas, t.judul, t.deskripsi, t.deadline, t.tanggal_dibuat, t.id_mk, t.id_dosen, mk.nama_mk, mk.kode_mk FROM tugas_mahasiswa tm "
                        + "JOIN tugas t ON tm.id_tugas = t.id_tugas "
                        + "JOIN mata_kuliah mk ON t.id_mk = mk.id_mk "
                        + "WHERE tm.id_mahasiswa = ? "
                        + "AND tm.status = 'BELUM' "
                        + "AND t.deadline >= CURDATE() "
                        + "AND DATEDIFF(t.deadline, CURDATE()) <= 3 "
-                       + "ORDER BY t.deadline ASC";
+                       + "UNION ALL "
+                       + "SELECT tp.status, NULL AS tanggal_selesai, -tp.id_tugas_pribadi AS id_tugas, tp.judul, tp.deskripsi, tp.deadline, tp.tanggal_dibuat, tp.id_mk, 0 AS id_dosen, mk.nama_mk, mk.kode_mk FROM tugas_pribadi tp "
+                       + "JOIN mata_kuliah mk ON tp.id_mk = mk.id_mk "
+                       + "WHERE tp.id_mahasiswa = ? "
+                       + "AND tp.status = 'BELUM' "
+                       + "AND tp.deadline >= CURDATE() "
+                       + "AND DATEDIFF(tp.deadline, CURDATE()) <= 3 "
+                       + "ORDER BY deadline ASC";
             ps = conn.prepareStatement(sql);
             ps.setInt(1, idMahasiswa);
+            ps.setInt(2, idMahasiswa);
             rs = ps.executeQuery();
             while (rs.next()) {
                 Tugas tugas = new Tugas(

@@ -13,9 +13,9 @@ if (u == null || !(u instanceof Dosen)) {
 
 Dosen dosen = (Dosen) u;
 
-// Fetch all courses for dropdown selector
+// Fetch only courses taught by this lecturer
 MataKuliahDAO mkDao = new MataKuliahDAO();
-ArrayList<MataKuliah> listMK = mkDao.getAll();
+ArrayList<MataKuliah> listMK = mkDao.getByDosen(dosen.getIdDosen());
 %>
 
 <%@page contentType="text/html" pageEncoding="UTF-8"%>
@@ -44,13 +44,23 @@ ArrayList<MataKuliah> listMK = mkDao.getAll();
         <form action="TugasServlet" method="post">
             
             <div class="form-group">
-                <label for="id_mk">Mata Kuliah</label>
-                <select id="id_mk" name="id_mk" class="form-control" required style="cursor: pointer;">
-                    <option value="" disabled selected>Pilih mata kuliah...</option>
-                    <% for (MataKuliah mk : listMK) { %>
-                        <option value="<%= mk.getIdMk() %>">[Sem <%= mk.getSemester() %>] <%= mk.getKodeMK() %> - <%= mk.getNamaMK() %></option>
-                    <% } %>
-                </select>
+                <label>Mata Kuliah</label>
+                <% if (listMK.isEmpty()) { %>
+                    <p style="color: var(--danger); font-weight: bold;">Anda tidak mengampu mata kuliah apa pun. Hubungi admin.</p>
+                <% } else if (listMK.size() == 1) { 
+                    MataKuliah mk = listMK.get(0);
+                %>
+                    <div class="form-control" style="background: rgba(255, 255, 255, 0.05); padding: 0.75rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); font-weight: 600; color: var(--text-color); display: flex; align-items: center;">
+                        [Sem <%= mk.getSemester() %>] <%= mk.getKodeMK() %> - <%= mk.getNamaMK() %>
+                    </div>
+                    <input type="hidden" name="id_mk" value="<%= mk.getIdMk() %>">
+                <% } else { %>
+                    <select id="id_mk" name="id_mk" class="form-control" required style="cursor: pointer;">
+                        <% for (MataKuliah mk : listMK) { %>
+                            <option value="<%= mk.getIdMk() %>">[Sem <%= mk.getSemester() %>] <%= mk.getKodeMK() %> - <%= mk.getNamaMK() %></option>
+                        <% } %>
+                    </select>
+                <% } %>
             </div>
             
             <div class="form-group">
